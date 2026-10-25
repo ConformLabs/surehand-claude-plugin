@@ -3,19 +3,32 @@
   "displayName": "Surehand MCP for Adobe After Effects",
   "version": "1.4.1",
   "description": "Your AI works in Adobe After Effects and proves what it did: an exact change report for every edit, pixel proof for restructures, delivery checks against your spec, template stress tests and verified farm renders. Runs locally; After Effects 2025 and 2026 on macOS and Windows.",
-  "author": { "name": "Conform Labs", "url": "https://conformlabs.co" },
+  "author": {
+    "name": "Conform Labs",
+    "url": "https://conformlabs.co"
+  },
   "homepage": "https://conformlabs.co/surehand/",
   "repository": "https://github.com/ConformLabs/surehand-claude-plugin",
   "license": "MIT",
-  "keywords": ["after-effects", "adobe", "motion-design", "extendscript", "qc", "rendering"],
+  "keywords": [
+    "after-effects",
+    "adobe",
+    "motion-design",
+    "extendscript",
+    "qc",
+    "rendering"
+  ],
   "icon": "./icon.png",
   "documentationUrl": "https://github.com/ConformLabs/surehand-mcp/wiki",
   "supportUrl": "https://github.com/ConformLabs/surehand-mcp/issues",
   "privacyPolicyUrl": "https://conformlabs.co/privacy/",
+  "termsOfServiceUrl": "https://github.com/ConformLabs/surehand-claude-plugin/blob/main/LICENSE",
   "mcpServers": {
     "surehand-ae": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/server/surehand-ae.mjs"]
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/surehand-ae.mjs"
+      ]
     }
   }
 }
