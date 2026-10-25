@@ -18,7 +18,7 @@ Conform Labs). It contains the Surehand MCP server and four skills that teach Cl
 
 | Part | What it is |
 |---|---|
-| `server/surehand-ae.mjs` | The Surehand MCP server, the 1.4.1 release file from [ConformLabs/surehand-mcp releases](https://github.com/ConformLabs/surehand-mcp/releases/tag/v1.4.1), built from the source in that repository. Claude Code starts it with `node`. |
+| `server/surehand-ae.mjs` | The Surehand MCP server: the release file from [ConformLabs/surehand-mcp releases](https://github.com/ConformLabs/surehand-mcp/releases) for this plugin's version, built from the source in that repository and checked against the release's SHA-256. Claude Code starts it with `node`. A workflow here picks up each new stable release. |
 | `skills/` | Four Agent Skills: working in After Effects, delivery checks, safe restructuring, exact timing and layout. |
 
 ## What it runs, changes and connects to

@@ -1,0 +1,75 @@
+name: Sync with the latest Surehand MCP release
+
+# Keeps this plugin on the latest stable release of ConformLabs/surehand-mcp: the server file (checked against the
+# release's own SHA-256) and the skills from that release's source, with plugin.json's version bumped to match.
+# The push reaches the Claude plugin directory through its webhook. Pre-releases are never picked up.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Sync again even if the version is the same (writes nothing when the files match)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-release
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE: ConformLabs/surehand-mcp
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Find the latest stable release
+        id: release
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo "$SOURCE" --json tagName,isPrerelease --jq 'select(.isPrerelease | not) | .tagName')
+          test -n "$tag"
+          latest=${tag#v}
+          current=$(jq -r .version .claude-plugin/plugin.json)
+          echo "current $current, latest $latest ($tag)"
+          if [ "$latest" = "$current" ]; then newer=false; else
+            top=$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)
+            [ "$top" = "$latest" ] && newer=true || newer=false
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          echo "sync=$([ "$newer" = true ] || [ "${{ inputs.force }}" = true ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Copy the release's server and skills
+        if: steps.release.outputs.sync == 'true'
+        run: |
+          set -euo pipefail
+          tag=${{ steps.release.outputs.tag }}
+          work=$(mktemp -d)
+          gh release download "$tag" --repo "$SOURCE" --pattern surehand-ae.mjs --pattern surehand-ae.mjs.sha256 --dir "$work"
+          (cd "$work" && sha256sum -c surehand-ae.mjs.sha256)
+          gh api "repos/$SOURCE/tarball/$tag" > "$work/source.tgz"
+          mkdir "$work/source"
+          tar -xzf "$work/source.tgz" -C "$work/source" --strip-components=1 --wildcards '*/skills/*'
+          test -f "$work/source/skills/surehand-ae/SKILL.md"
+          cp "$work/surehand-ae.mjs" server/surehand-ae.mjs
+          rm -rf skills && cp -R "$work/source/skills" skills
+          jq --arg v "${{ steps.release.outputs.version }}" '.version = $v' .claude-plugin/plugin.json > "$work/plugin.json"
+          mv "$work/plugin.json" .claude-plugin/plugin.json
+
+      - name: Commit and push
+        if: steps.release.outputs.sync == 'true'
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then echo "already matches ${{ steps.release.outputs.tag }}: nothing to commit"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Surehand MCP ${{ steps.release.outputs.version }}: server and skills from ${{ steps.release.outputs.tag }}"
+          git push
